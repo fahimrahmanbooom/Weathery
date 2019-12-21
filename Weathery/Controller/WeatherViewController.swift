@@ -32,6 +32,22 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
     var currentLocation: String?
     var conditionId: Int?
     
+    var selectedLocationFromThePickerView: String?
+    
+    // Picker Items
+    
+    let locationPickerArray: [String] = [
+        "",
+        "Dhaka",
+        "Chittagong",
+        "Khulna",
+        "Barisal",
+        "Mymensingh",
+        "Rajshahi",
+        "Rangpur",
+        "Sylhet"
+    ]
+    
     var locationManager = CLLocationManager()
     
     
@@ -42,30 +58,33 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
         locationService()
         location = "\(currentLocation ?? "")"
         getDataFromServer()
+        picker()
+        toolBar()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        locationService()
-        getDataFromServer()
-    }
+    //    override func viewWillAppear(_ animated: Bool) {
+    //        locationService()
+    //        getDataFromServer()
+    //    }
     
     // Search Button Action
     
     @IBAction func searchPressed(_ sender: UIButton) {
         
         if locationInputTextField.text != "" {
-        
-        location = locationInputTextField.text
-        location = "q=\(location!)"
-        getDataFromServer()
+            
+            location = locationInputTextField.text
+            location = "q=\(location!)"
+            getDataFromServer()
         }
         else {
             locationService()
             location = "\(currentLocation ?? "")"
             getDataFromServer()
         }
-        locationInputTextField.endEditing(true)
-        locationInputTextField.resignFirstResponder()
+        
+        locationInputTextField.text = ""
+        view.endEditing(true)
     }
     
     // Location Button Action
@@ -75,33 +94,6 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
         locationService()
         location = "\(currentLocation ?? "")"
         getDataFromServer()
-    }
-    
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        
-        location = locationInputTextField.text
-        location = "q=\(location!)"
-        getDataFromServer()
-        locationInputTextField.endEditing(true)
-        locationInputTextField.resignFirstResponder()
-        
-        return true
-    }
-    
-    func textFieldShouldEndEditing(_ textField: UITextField) -> Bool {
-        
-        if locationInputTextField.text != "" {
-            return true
-        }
-        else {
-            locationInputTextField.placeholder = "Enter a city name here"
-            return false
-        }
-    }
-    
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        locationInputTextField.text = ""
     }
     
     
@@ -132,10 +124,11 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
                 self.locationLabel.text = "Not Found"
             }
             
+            
             if self.conditionId != nil {
                 
                 if self.conditionId! >= 200 && self.conditionId! <= 232 {
-                 self.weatherIconImage.image = UIImage(systemName: "cloud.bolt")
+                    self.weatherIconImage.image = UIImage(systemName: "cloud.bolt")
                 }
                 if self.conditionId! >= 300 && self.conditionId! <= 321 {
                     self.weatherIconImage.image = UIImage(systemName: "cloud.drizzle")
@@ -156,12 +149,13 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
                     self.weatherIconImage.image = UIImage(systemName: "cloud.bolt")
                 }
             }
+                
             else {
                 self.weatherIconImage.image = UIImage(systemName: "cloud")
             }
         }
     }
-
+    
     // Taking permission from the user to get the current location
     
     func locationService() {
@@ -176,7 +170,7 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
             reportLocationServicesDeniedError()
             return
         }
-        
+            
         else {
             locationUpdated()
         }
@@ -195,12 +189,87 @@ class WeatherViewController: UIViewController, UITextFieldDelegate, CLLocationMa
         }
     }
     
-    // Letting user know that he/she did't give permission
+    // Letting user know that system did't get permission
     
     func reportLocationServicesDeniedError() {
         let alert = UIAlertController(title: "Location Service Disabled.", message: "Please go to Setting > Privacy to enable location service for this app.", preferredStyle: .alert)
         let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
         alert.addAction(okAction)
         present(alert, animated: true, completion: nil)
+    }
+    
+    
+    
+    
+    // Creating pickerview
+    
+    func picker() {
+        let pickerView = UIPickerView()
+        pickerView.delegate = self
+        locationInputTextField.inputView = pickerView
+        
+        pickerView.backgroundColor = .none
+    }
+    
+    // Creating toolbar
+    
+    func toolBar() {
+        let toolBar = UIToolbar()
+        toolBar.sizeToFit()
+        
+        let doneButton = UIBarButtonItem(title: "Done", style: .plain, target: self, action: #selector(WeatherViewController.dismissKeyboard))
+        
+        toolBar.setItems([doneButton], animated: true)
+        toolBar.isUserInteractionEnabled = true
+        toolBar.barTintColor = .white
+        toolBar.tintColor = .systemPink
+        
+        locationInputTextField.inputAccessoryView = toolBar
+        
+    }
+    
+    @objc func dismissKeyboard() {
+        
+        if locationInputTextField.text != "" {
+            
+            location = locationInputTextField.text
+            location = "q=\(location!)"
+            getDataFromServer()
+        }
+        else {
+            locationService()
+            location = "\(currentLocation ?? "")"
+            getDataFromServer()
+        }
+        
+        locationInputTextField.text = ""
+        view.endEditing(true)
+    }
+}
+
+
+
+
+extension WeatherViewController: UIPickerViewDelegate, UIPickerViewDataSource {
+    
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        
+        return locationPickerArray.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        
+        return locationPickerArray[row]
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        
+        selectedLocationFromThePickerView = locationPickerArray[row]
+        locationInputTextField.text = selectedLocationFromThePickerView
     }
 }
